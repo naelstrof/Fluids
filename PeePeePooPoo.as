@@ -9,7 +9,7 @@ string bleed_sprite = "sprites/bleed.spr";
 string milk_sound = "twlz/kimochi.wav";
 string splat_sound = "pp/splat.wav";
 
-array<string> coom_sounds = {"pp/coom.wav", "pp/coom2.wav", "pp/coom3.wav"};
+array<string> coom_sounds = {"pp/splat2.wav", "pp/swallow.wav", "pp/swallow2.wav", "pp/swallow4.wav"};
 
 float BLEED_DELAY = 1;
 float BLEED_LIFE = 10; // max life before killing blood entity
@@ -219,7 +219,7 @@ PlayerState@ getPlayerState(CBasePlayer@ plr)
 	return cast<PlayerState@>( g_player_states[steamId] );
 }
 
-void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool isBlood) {
+void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest) {
 	CBasePlayer@ plr = cast<CBasePlayer@>(h_plr.GetEntity());
 	
 	if (plr is null or strength <= 0 or !plr.IsAlive()) {
@@ -237,7 +237,9 @@ void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool i
 	Vector pos, angles;	
 	pos = plr.pev.origin;
 	
-	if (state.bone != -1) {
+	if (plr.GetAttachmentCount() >= 5) {
+		plr.GetAttachment(4, pos, angles);
+	} else if (state.bone != -1) {
 		plr.GetBonePosition(state.bone, pos, angles);
 	} else {
 		float offset = state.offset;
@@ -273,7 +275,7 @@ void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool i
 	edict_t@ dest = isTest ? @plr.edict() : null;
 	
 	if (plr.pev.waterlevel >= WATERLEVEL_WAIST) {
-		string model = isBlood ? bleed_sprite : pee_sprite;
+		string model = pee_sprite;
 		te_firefield(plr.pev.origin, 16, model, count, 8, 255, msgType, dest);
 	} else {
 		Vector peedir = state.male ? dir*50 + (dir*150*speed) : Vector(0,0,0);
@@ -282,7 +284,7 @@ void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool i
 		int life = isTest ? 0 : 255;
 		int flags = isTest ? 0 : 4;		
 		
-		string model = isBlood ? bleed_sprite : pee_sprite;
+		string model = pee_sprite;
 		te_breakmodel(pos, Vector(0,0,0), peedir + plr.pev.velocity, 1, model, count, life, flags, msgType, dest);
 	}
 	
@@ -292,14 +294,14 @@ void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool i
 		squirts_left--;
 	}
 	
-	g_Scheduler.SetTimeout("peepee", delay, h_plr, strength - 0.01f, squirts_left, isTest, isBlood);
+	g_Scheduler.SetTimeout("peepee", delay, h_plr, strength - 0.01f, squirts_left, isTest);
 }
 
 void delay_decal(Vector pos, EHandle h_hitEnt, string decal) {
 	te_decal(pos, h_hitEnt, decal);
 }
 
-void coom(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
+void coom(EHandle h_plr, float strength, int squirts_left) {
 	CBasePlayer@ plr = cast<CBasePlayer@>(h_plr.GetEntity());
 	
 	if (plr is null or strength <= 0 or !plr.IsAlive()) {
@@ -311,7 +313,9 @@ void coom(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	Vector pos, angles;	
 	pos = plr.pev.origin;
 	
-	if (state.bone != -1) {
+	if (plr.GetAttachmentCount() >= 5) {
+		plr.GetAttachment(4, pos, angles);
+	} else if (state.bone != -1) {
 		plr.GetBonePosition(state.bone, pos, angles);
 	} else {
 		
@@ -337,14 +341,14 @@ void coom(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	int count = strength > 0.5f ? 2 : 1;
 	
 	if (plr.pev.waterlevel >= WATERLEVEL_WAIST) {
-		string spr = isBlood ? bleed_sprite : coom_sprite;
+		string spr = coom_sprite;
 		te_firefield(plr.pev.origin, 6, spr, 16, 8, 255, MSG_BROADCAST, null);
 	} else {
 		Vector peedir = state.male ? coomdir : Vector(0,0,0);
 		
 		int life = 255;
 		int flags = 4;
-		int color = isBlood ? 70 : 5;
+		int color = 5;
 		te_bloodstream(pos, coomdir, color, int(speed*200));
 		
 		if (strength == 1.0f) {
@@ -355,7 +359,7 @@ void coom(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 			
 			if (tr.flFraction < 1.0f) {
 				float impactTime = (tr.vecEndPos - pos).Length() / coomDist;
-				string decal = isBlood ? "{bigblood1" : "{mommablob";
+				string decal = "{mommablob";
 				g_Scheduler.SetTimeout("delay_decal", impactTime, tr.vecEndPos, EHandle(g_EntityFuncs.Instance(tr.pHit)), decal);
 			}
 		}
@@ -364,12 +368,12 @@ void coom(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	
 	float delay = 1.0f;
 	if (--squirts_left > 0) {
-		g_Scheduler.SetTimeout("coom", delay, h_plr, strength * 0.6f, squirts_left, isBlood);
+		g_Scheduler.SetTimeout("cum", delay, h_plr, strength * 0.6f, squirts_left);
 	}
 	
 }
 
-void lactate(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
+void lactate(EHandle h_plr, float strength, int squirts_left) {
 	CBasePlayer@ plr = cast<CBasePlayer@>(h_plr.GetEntity());
 	
 	if (plr is null or strength <= 0 or !plr.IsAlive()) {
@@ -384,7 +388,6 @@ void lactate(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	if (state.bone != -1) {
 		plr.GetBonePosition(state.bone, pos, angles);
 	} else {
-		
 		float offset = state.offset;
 		if (plr.pev.flags & FL_DUCKING != 0) {
 			offset *= 0.5f;
@@ -421,12 +424,12 @@ void lactate(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	Vector pos2 = pos - latDir*nipSpacing;
 	
 	if (plr.pev.waterlevel >= WATERLEVEL_WAIST) {
-		string model = isBlood ? bleed_sprite : coom_sprite;
+		string model = coom_sprite;
 		te_firefield(pos1, 6, model, 16, 8, 255, MSG_BROADCAST, null);
 		te_firefield(pos2, 6, model, 16, 8, 255, MSG_BROADCAST, null);
 	} else {
-		int color = isBlood ? 70 : 5;
-		int color2 = isBlood ? 70 : 10;
+		int color = 5;
+		int color2 = 10;
 		
 		te_bloodstream(pos1, dir1, color, int(speed*200));
 		te_bloodstream(pos2, dir2, color, int(speed*200));
@@ -437,7 +440,7 @@ void lactate(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	
 	float delay = 1.0f;
 	if (--squirts_left > 0) {
-		g_Scheduler.SetTimeout("lactate", delay, h_plr, strength * 0.6f, squirts_left, isBlood);
+		g_Scheduler.SetTimeout("lactate", delay, h_plr, strength * 0.6f, squirts_left);
 	}
 }
 
@@ -539,9 +542,6 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".blood" to bleed once.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bleed" to bleed constantly.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bleedhp" to bleed only when health is not maxed.\n');
-			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bloodpee" to pee blood.\n');
-			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bloodcoom" to coom blood.\n');
-			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bloodmilk" to lactate blood.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".pp auto" to toggle automatic peeing.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".pp [m/f]" to change pee mode.\n');
 			
@@ -578,7 +578,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			return true;
 		}
 		
-		if ( args[0] == ".pee" or args[0] == ".bloodpee" )
+		if ( args[0] == ".pee" )
 		{
 			float delta = g_Engine.time - state.lastPee;
 			if (delta < cvar_pp_cooldown.GetInt()) {
@@ -587,7 +587,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			}
 			state.nextPee = getNextAutoPee();
 			state.lastPee = g_Engine.time;
-			peepee(EHandle(plr), 1.0f, 4, false, args[0] == ".bloodpee");
+			peepee(EHandle(plr), 1.0f, 4, false);
 			return true;
 		}
 		
@@ -625,7 +625,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			return true;
 		}
 		
-		if ( args[0] == ".coom" or args[0] == ".bloodcoom" )
+		if (args[0] == ".cum")
 		{
 			float delta = g_Engine.time - state.lastPee;
 			if (delta < cvar_pp_cooldown.GetInt()) {
@@ -635,9 +635,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			state.nextPee = getNextAutoPee();
 			state.lastPee = g_Engine.time;
 			
-			bool isBlood = args[0] == ".bloodcoom";
-			
-			coom(EHandle(plr), 1.0f, 3, isBlood);
+			coom(EHandle(plr), 1.0f, 8);
 			
 			if (plr.IsAlive()) {
 				string snd = coom_sounds[Math.RandomLong(0, coom_sounds.size()-1)];
@@ -649,7 +647,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			return true;
 		}
 		
-		if ( args[0] == ".lactate" || args[0] == ".milk" || args[0] == ".bloodmilk" )
+		if ( args[0] == ".lactate" || args[0] == ".milk" )
 		{
 			float delta = g_Engine.time - state.lastPee;
 			if (delta < cvar_pp_cooldown.GetInt()) {
@@ -657,13 +655,14 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 				return true;
 			}
 			
+			string snd = coom_sounds[Math.RandomLong(0, coom_sounds.size()-1)];
 			int pit = Math.RandomLong(95, 105);
 			float vol = 0.8f;
-			g_SoundSystem.PlaySound(plr.edict(), CHAN_VOICE, milk_sound, vol, 0.8f, 0, pit, 0, true, plr.pev.origin);
+			g_SoundSystem.PlaySound(plr.edict(), CHAN_VOICE, snd, vol, 0.8f, 0, pit, 0, true, plr.pev.origin);
 			
 			state.nextPee = getNextAutoPee();
 			state.lastPee = g_Engine.time;
-			lactate(EHandle(plr), 1.0f, 2, args[0] == ".bloodmilk");
+			lactate(EHandle(plr), 1.0f, 2);
 			return true;
 		}
 	}
@@ -686,15 +685,12 @@ HookReturnCode ClientSay( SayParameters@ pParams )
 
 CClientCommand _pp("pp", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _pee("pee", "Pee pee poo poo commands", @consoleCmd );
-CClientCommand _coom("coom", "Pee pee poo poo commands", @consoleCmd );
+CClientCommand _coom("cum", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _milk("milk", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _lactate("lactate", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _bleed("bleed", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _bleedhp("bleedhp", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _blood("blood", "Pee pee poo poo commands", @consoleCmd );
-CClientCommand _bloodpee("bloodpee", "Pee pee poo poo commands", @consoleCmd );
-CClientCommand _bloodcoom("bloodcoom", "Pee pee poo poo commands", @consoleCmd );
-CClientCommand _bloodmilk("bloodmilk", "Pee pee poo poo commands", @consoleCmd );
 
 void consoleCmd( const CCommand@ args )
 {
