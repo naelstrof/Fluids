@@ -189,7 +189,7 @@ void auto_pee() {
 		if (state.autoPee && state.nextPee < g_Engine.time) {
 			state.nextPee = getNextAutoPee();
 			state.lastPee = g_Engine.time;
-			peepee(EHandle(plr), 1.0f, 4, false, false);
+			peepee(EHandle(plr), 1.0f, 4, false);
 		}
 		
 		if ((state.autoBleed or state.realBleed) and g_Engine.time - state.lastBleed > cvar_bleed_cooldown.GetFloat()) {
@@ -489,7 +489,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 					state.isTesting = !state.isTesting;
 					if (state.isTesting) {
 						g_PlayerFuncs.SayText(plr, 'Test pee enabled\n');
-						peepee(EHandle(plr), 5.0f, 4, true, false);
+						peepee(EHandle(plr), 5.0f, 4, true);
 					}
 					
 					return true;
