@@ -219,6 +219,11 @@ PlayerState@ getPlayerState(CBasePlayer@ plr)
 	return cast<PlayerState@>( g_player_states[steamId] );
 }
 
+void explode(EHandle h_plr) {
+	CBasePlayer@ plr = cast<CBasePlayer@>(h_plr.GetEntity());
+	plr.TakeDamage(null, null, 65535.0f, DMG_BULLET|DMG_ALWAYSGIB);
+}
+
 void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool isBlood) {
 	CBasePlayer@ plr = cast<CBasePlayer@>(h_plr.GetEntity());
 	
@@ -237,9 +242,7 @@ void peepee(EHandle h_plr, float strength, int squirts_left, bool isTest, bool i
 	Vector pos, angles;	
 	pos = plr.pev.origin;
 	
-	if (plr.GetAttachmentCount() >= 5) {
-		plr.GetAttachment(4, pos, angles);
-	} else if (state.bone != -1) {
+	if (state.bone != -1) {
 		plr.GetBonePosition(state.bone, pos, angles);
 	} else {
 		float offset = state.offset;
@@ -313,12 +316,9 @@ void cum(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	Vector pos, angles;	
 	pos = plr.pev.origin;
 	
-	if (plr.GetAttachmentCount() >= 5) {
-		plr.GetAttachment(4, pos, angles);
-	} else if (state.bone != -1) {
+	if (state.bone != -1) {
 		plr.GetBonePosition(state.bone, pos, angles);
 	} else {
-		
 		float offset = state.offset;
 		if (plr.pev.flags & FL_DUCKING != 0) {
 			offset *= 0.5f;
@@ -334,8 +334,11 @@ void cum(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	
 	Math.MakeVectors(angles);
 	Vector cumdir = g_Engine.v_forward;
-	
-	
+
+	string snd = cum_sounds[Math.RandomLong(0, cum_sounds.size()-1)];
+	int pit = Math.RandomLong(95, 105);
+	float vol = 0.8f;
+	g_SoundSystem.PlaySound(plr.edict(), CHAN_VOICE, snd, vol, 0.8f, 0, pit, 0, true, plr.pev.origin);
 	
 	float speed = strength;
 	int count = strength > 0.5f ? 2 : 1;
@@ -368,7 +371,7 @@ void cum(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	
 	float delay = 1.0f;
 	if (--squirts_left > 0) {
-		g_Scheduler.SetTimeout("cum", delay, h_plr, strength * 0.6f, squirts_left, isBlood);
+		g_Scheduler.SetTimeout("cum", delay, h_plr, strength * 0.94f, squirts_left, isBlood);
 	}
 	
 }
@@ -385,16 +388,11 @@ void lactate(EHandle h_plr, float strength, int squirts_left, bool isBlood) {
 	Vector pos, angles;	
 	pos = plr.pev.origin;
 	
-	if (state.bone != -1) {
-		plr.GetBonePosition(state.bone, pos, angles);
-	} else {
-		
-		float offset = state.offset;
-		if (plr.pev.flags & FL_DUCKING != 0) {
-			offset *= 0.5f;
-		}
-		pos.z += offset;
+	float offset = state.offset;
+	if (plr.pev.flags & FL_DUCKING != 0) {
+		offset *= 0.5f;
 	}
+	pos.z += offset;
 
 	angles = plr.pev.v_angle;
 	angles.x *= 0.5f;
@@ -543,6 +541,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".blood" to bleed once.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bleed" to bleed constantly.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".bleedhp" to bleed only when health is not maxed.\n');
+			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".explode" to explode.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".pp auto" to toggle automatic peeing.\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, 'Type ".pp [m/f]" to change pee mode.\n');
 			
@@ -550,7 +549,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '    Type ".pp offset [-36 to +36]" to set a vertical pee offset\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '        - good enough if you\'re not using emotes\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '        - disables bone peeing\n');
-			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '    Type ".pp bone [0-255]" to set a model bone to pee from\n');
+			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '    Type ".pp bone [0-256]" to set a model bone to pee from\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '        - for accurate peeing when using emotes\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '        - displays incorrectly in the first-person view\n');
 			g_PlayerFuncs.ClientPrint(plr, HUD_PRINTCONSOLE, '        - doesn\'t work for all models.\n');
@@ -573,6 +572,7 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			if (!isConsoleCommand) {
 				g_PlayerFuncs.SayText(plr, 'Say ".pee" to pee.\n');
 				g_PlayerFuncs.SayText(plr, 'Say ".cum" to cum.\n');
+				g_PlayerFuncs.SayText(plr, 'Say ".explode" to explode.\n');
 				g_PlayerFuncs.SayText(plr, 'Say ".milk" to lactate.\n');
 				g_PlayerFuncs.SayText(plr, 'Type ".pp" in console for more commands/info\n');
 			}
@@ -625,6 +625,11 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			g_PlayerFuncs.SayText(plr, 'Low HP bleeding ' + (state.realBleed ? "enabled" : "disabled") + '.\n');
 			return true;
 		}
+		if ( args[0] == ".explode" )
+		{
+			explode(EHandle(plr));
+			return true;
+		}
 		
 		if ( args[0] == ".cum" )
 		{
@@ -637,13 +642,6 @@ bool doCommand(CBasePlayer@ plr, const CCommand@ args, bool isConsoleCommand)
 			state.lastPee = g_Engine.time;
 			
 			cum(EHandle(plr), 1.0f, 8, false);
-			
-			if (plr.IsAlive()) {
-				string snd = cum_sounds[Math.RandomLong(0, cum_sounds.size()-1)];
-				int pit = Math.RandomLong(95, 105);
-				float vol = 0.8f;
-				g_SoundSystem.PlaySound(plr.edict(), CHAN_VOICE, snd, vol, 0.8f, 0, pit, 0, true, plr.pev.origin);
-			}
 			
 			return true;
 		}
@@ -688,9 +686,13 @@ CClientCommand _pee("pee", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _cum("cum", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _milk("milk", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _lactate("lactate", "Pee pee poo poo commands", @consoleCmd );
+CClientCommand _explode("explode", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _bleed("bleed", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _bleedhp("bleedhp", "Pee pee poo poo commands", @consoleCmd );
 CClientCommand _blood("blood", "Pee pee poo poo commands", @consoleCmd );
+CClientCommand _bloodpee("bloodpee", "Pee pee poo poo commands", @consoleCmd );
+CClientCommand _bloodcoom("bloodcoom", "Pee pee poo poo commands", @consoleCmd );
+CClientCommand _bloodmilk("bloodmilk", "Pee pee poo poo commands", @consoleCmd );
 
 void consoleCmd( const CCommand@ args )
 {
